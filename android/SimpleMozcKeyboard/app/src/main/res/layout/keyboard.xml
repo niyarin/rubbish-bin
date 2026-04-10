@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#383838">
+
+    <!-- 候補表示エリア -->
+    <include
+        android:id="@+id/candidate_strip_container"
+        layout="@layout/candidate_strip"
+        android:visibility="gone" />
+
+    <!-- キーボード -->
+    <com.niyarin.simplemozckeyboard.LongPressKeyboardView
+        android:id="@+id/keyboard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#383838"
+        android:keyBackground="@drawable/key_background"
+        android:keyTextColor="#FFFFFF"
+        android:keyPreviewLayout="@layout/key_preview"/>
+
+</LinearLayout>

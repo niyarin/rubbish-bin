@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+    android:keyWidth="20%p"
+    android:horizontalGap="0px"
+    android:verticalGap="0px"
+    android:keyHeight="60dp">
+
+    <Row>
+        <Key android:codes="2001" android:keyLabel="😀"/>
+        <Key android:codes="2002" android:keyLabel="😃"/>
+        <Key android:codes="2003" android:keyLabel="😄"/>
+        <Key android:codes="2004" android:keyLabel="😁"/>
+        <Key android:codes="2005" android:keyLabel="😆"/>
+    </Row>
+
+    <Row>
+        <Key android:codes="2006" android:keyLabel="😅"/>
+        <Key android:codes="2007" android:keyLabel="🤣"/>
+        <Key android:codes="2008" android:keyLabel="😂"/>
+        <Key android:codes="2009" android:keyLabel="🙂"/>
+        <Key android:codes="2010" android:keyLabel="🙃"/>
+    </Row>
+
+    <Row>
+        <Key android:codes="2011" android:keyLabel="😉"/>
+        <Key android:codes="2012" android:keyLabel="😊"/>
+        <Key android:codes="2013" android:keyLabel="😇"/>
+        <Key android:codes="2014" android:keyLabel="🥰"/>
+        <Key android:codes="2015" android:keyLabel="😍"/>
+    </Row>
+
+    <Row>
+        <Key android:codes="-100" android:keyLabel="あ/A/1" android:keyWidth="25%p" android:keyEdgeFlags="left"/>
+        <Key android:codes="44" android:keyLabel=","/>
+        <Key android:codes="32" android:keyLabel="スペース" android:keyWidth="40%p"/>
+        <Key android:codes="46" android:keyLabel="."/>
+        <Key android:codes="10" android:keyLabel="改行" android:keyWidth="15%p" android:keyEdgeFlags="right"/>
+    </Row>
+
+</Keyboard>
