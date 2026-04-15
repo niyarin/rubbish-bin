@@ -251,6 +251,14 @@ class SimpleKeyboardIME : InputMethodService(), KeyboardView.OnKeyboardActionLis
             in 'a'.code..'z'.code -> {
                 handleAlphabetKey(inputConnection, primaryCode.toChar())
             }
+            '-'.code, 12540 -> {
+                if (currentMode == InputMode.JAPANESE) {
+                    handleAlphabetKey(inputConnection, '-')
+                } else {
+                    commitComposingText(inputConnection)
+                    inputConnection.commitText(primaryCode.toChar().toString(), 1)
+                }
+            }
             else -> {
                 // その他の文字（数字、記号など）、または絵文字モードでの入力
                 val emoji = EMOJI_CODE_MAP[primaryCode]
