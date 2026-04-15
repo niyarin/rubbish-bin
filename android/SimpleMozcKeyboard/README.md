@@ -24,10 +24,11 @@ Generating mozc.data
 git clone https://github.com/google/mozc
 cd mozc
 git checkout 3.33.6133
+cd src
 bazel build --config=oss_linux //data_manager/oss:mozc_dataset_for_oss
 
 # copy to app/src/main/assets/mozc.data
-cp src/bazel-bin/data_manager/oss/mozc.data ../app/src/main/assets/mozc.data
+cp bazel-bin/data_manager/oss/mozc.data ../../app/src/main/assets/mozc.data
 ```
 
 Build.
