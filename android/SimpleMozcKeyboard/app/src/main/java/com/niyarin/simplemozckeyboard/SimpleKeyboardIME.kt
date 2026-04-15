@@ -315,7 +315,19 @@ class SimpleKeyboardIME : InputMethodService(), KeyboardView.OnKeyboardActionLis
 
                 when (val result = converter.getSuggestions(hiraganaText)) {
                     is MozcResult.Success -> {
-                        val candidates = result.data
+                        val directCandidates = result.data
+                        val fallbackCandidates =
+                            if (directCandidates.size <= 1) {
+                                getSuggestionsFromConversionFallback(converter, hiraganaText)
+                            } else {
+                                emptyList()
+                            }
+
+                        val candidates = if (shouldPreferFallback(directCandidates, fallbackCandidates)) {
+                            fallbackCandidates
+                        } else {
+                            directCandidates
+                        }
                         android.util.Log.d("SimpleKeyboardIME", "Got ${candidates.size} suggestions")
 
                         if (candidates.isNotEmpty()) {
@@ -326,13 +338,66 @@ class SimpleKeyboardIME : InputMethodService(), KeyboardView.OnKeyboardActionLis
                     }
                     is MozcResult.Error -> {
                         android.util.Log.e("SimpleKeyboardIME", "Failed to get suggestions: ${result.message}")
-                        hideCandidates()
+                        val fallbackCandidates = getSuggestionsFromConversionFallback(converter, hiraganaText)
+                        if (fallbackCandidates.isNotEmpty()) {
+                            showCandidates(fallbackCandidates)
+                        } else {
+                            hideCandidates()
+                        }
                     }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("SimpleKeyboardIME", "Failed to get suggestions", e)
+                hideCandidates()
             }
         }
+    }
+
+    private fun getSuggestionsFromConversionFallback(
+        converter: MozcConverter,
+        hiraganaText: String
+    ): List<Candidate> {
+        if (hiraganaText.isEmpty()) {
+            return emptyList()
+        }
+
+        return try {
+            converter.reset()
+            when (val result = converter.convert(hiraganaText)) {
+                is MozcResult.Success -> {
+                    result.data.candidates
+                        .distinctBy { it.value }
+                        .take(20)
+                }
+                is MozcResult.Error -> {
+                    android.util.Log.e(
+                        "SimpleKeyboardIME",
+                        "Fallback conversion for suggestions failed: ${result.message}"
+                    )
+                    emptyList()
+                }
+            }
+        } finally {
+            converter.reset()
+        }
+    }
+
+    private fun shouldPreferFallback(
+        directCandidates: List<Candidate>,
+        fallbackCandidates: List<Candidate>
+    ): Boolean {
+        if (fallbackCandidates.isEmpty()) {
+            return false
+        }
+        if (directCandidates.isEmpty()) {
+            return true
+        }
+        if (directCandidates.size > 1) {
+            return false
+        }
+
+        val directValue = directCandidates.first().value
+        return fallbackCandidates.size > 1 || fallbackCandidates.firstOrNull()?.value != directValue
     }
 
     private fun handleBackspace(ic: InputConnection) {
