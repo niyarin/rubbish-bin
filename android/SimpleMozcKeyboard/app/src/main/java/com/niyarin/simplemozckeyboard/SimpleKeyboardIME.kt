@@ -60,6 +60,7 @@ class SimpleKeyboardIME : InputMethodService(), KeyboardView.OnKeyboardActionLis
     private var candidateStrip: HorizontalScrollView? = null
     private var candidateContainer: LinearLayout? = null
     private var currentCandidates: List<Candidate> = emptyList()
+    private var currentCandidateIndex = 0
 
     // 現在の入力モード
     private var currentMode = InputMode.JAPANESE
@@ -234,14 +235,7 @@ class SimpleKeyboardIME : InputMethodService(), KeyboardView.OnKeyboardActionLis
                 // スペース
                 if (currentMode == InputMode.JAPANESE) {
                     if (isInConversionMode) {
-                        // 変換モード中の場合は、次の候補へ（スペースキーを送る代わりに、再度convertを呼ぶ）
-                        // Note: 新APIでは内部的にスペースキーで次候補に移動
-                        mozcConverter?.let { converter ->
-                            // バックスペースで戻ってもう一度変換することで次の候補を取得
-                            // または、現在の変換を維持して別の方法で次候補を取得
-                            // 簡略化: 現状は何もせず、候補リストから選択してもらう
-                            android.util.Log.d("SimpleKeyboardIME", "Already in conversion mode, use candidate list")
-                        }
+                        advanceConversionCandidate(inputConnection)
                     } else if (composingText.isNotEmpty()) {
                         // 未確定文字列がある場合は変換を開始
                         handleConversion(inputConnection)
@@ -499,6 +493,9 @@ class SimpleKeyboardIME : InputMethodService(), KeyboardView.OnKeyboardActionLis
 
         candidateContainer?.removeAllViews()
         currentCandidates = candidates
+        if (currentCandidateIndex !in candidates.indices) {
+            currentCandidateIndex = 0
+        }
 
         if (candidates.isEmpty()) {
             android.util.Log.d("SimpleKeyboardIME", "No candidates, hiding candidate strip")
@@ -537,7 +534,44 @@ class SimpleKeyboardIME : InputMethodService(), KeyboardView.OnKeyboardActionLis
     private fun hideCandidates() {
         candidateContainer?.removeAllViews()
         currentCandidates = emptyList()
+        currentCandidateIndex = 0
         candidateStrip?.visibility = View.GONE
+    }
+
+    private fun advanceConversionCandidate(ic: InputConnection) {
+        if (!isInConversionMode || currentCandidates.isEmpty()) {
+            return
+        }
+
+        mozcConverter?.let { converter ->
+            val nextIndex = (currentCandidateIndex + 1) % currentCandidates.size
+            val nextCandidate = currentCandidates[nextIndex]
+
+            when (val result = converter.selectCandidate(nextCandidate.id)) {
+                is MozcResult.Success -> {
+                    currentCandidateIndex = nextIndex
+                    val conversionResult = result.data
+                    if (conversionResult.preedit.isNotEmpty()) {
+                        ic.setComposingText(conversionResult.preedit, 1)
+                    }
+                    if (conversionResult.candidates.isNotEmpty()) {
+                        showCandidates(conversionResult.candidates)
+                        val updatedIndex =
+                            conversionResult.candidates.indexOfFirst { it.id == nextCandidate.id }
+                        if (updatedIndex >= 0) {
+                            currentCandidateIndex = updatedIndex
+                        } else {
+                            currentCandidateIndex =
+                                nextIndex.coerceAtMost(conversionResult.candidates.lastIndex)
+                        }
+                    }
+                    Unit
+                }
+                is MozcResult.Error -> {
+                    android.util.Log.e("SimpleKeyboardIME", "Failed to advance candidate: ${result.message}")
+                }
+            }
+        }
     }
 
     private fun onCandidateSelected(candidate: Candidate) {
@@ -610,6 +644,7 @@ class SimpleKeyboardIME : InputMethodService(), KeyboardView.OnKeyboardActionLis
                             // 変換候補を未確定状態で表示（確定はしない）
                             ic.setComposingText(conversionResult.preedit, 1)
                             isInConversionMode = true
+                            currentCandidateIndex = 0
 
                             // 候補リストを表示
                             showCandidates(conversionResult.candidates)
